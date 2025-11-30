@@ -1,0 +1,5 @@
+.idea/
+.vscode/
+*.log
+gitlab-ci.yml
+package-lock.json
