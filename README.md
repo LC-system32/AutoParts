@@ -1,4 +1,3 @@
-![Preview](Readme_assets/logo.png) 
 # AutoParts - інтернет-магазин автозапчастин # 
 
 ![status](https://img.shields.io/badge/status-beta-brightgreen)
