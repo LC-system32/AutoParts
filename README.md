@@ -1,146 +1,133 @@
-# AutoParts
+![Preview](Readme_assets/logo.png) 
+# AutoParts - інтернет-магазин автозапчастин # 
 
-![status](https://img.shields.io/badge/status-production-brightgreen)
+![status](https://img.shields.io/badge/status-beta-brightgreen)
 ![version](https://img.shields.io/badge/version-1.0.0-informational)
 ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
 ![postgres](https://img.shields.io/badge/postgres-%3E%3D13-4169E1)
-![license](https://img.shields.io/badge/license-not%20specified-lightgrey)
-
-**AutoParts** — повноцінний проєкт інтернет‑магазину автозапчастин. Складається з бекенду (**/api**, Node.js + PostgreSQL). Надає повний набір можливостей: каталог товарів із фільтрами та сумісністю за авто (марка/модель/покоління/модифікація), кошик, замовлення, улюблені, адреси, довідники методів доставки/оплати, тікет‑саппорт, а також службові маршрути для адміністративних задач. Оптимізовано для роботи за reverse‑proxy і масштабування.
-
-![Preview](docs/img.png)
-
----
 
 ## Зміст
-- [Встановлення](#встановлення)
-- [Використання](#використання)
-- [Структура репозиторію](#структура-репозиторію)
-- [Технології](#технології)
+- [Опис проєкту](#опис-проєкту)
+- [Структура проєкту](#структура-проєкту)
+- [Зовнішній вигляд головної сторінки сайту](#Зовнішній-вигляд-головної-сторінки-сайту)
 - [Налаштування середовища](#налаштування-середовища)
-- [Деплой](#деплой)
-- [Внесок у проєкт](#внесок-у-проєкт)
-- [Ліцензія](#ліцензія)
+- [Встановлення та запуск](#встановлення-та-запуск)
 
----
+## Опис проєкту
 
-## Встановлення
+### Загальна характеристика програмного продукту
 
-> Вимоги: Node.js **18+**, PostgreSQL **13+**, доступ до інстансу БД.
+AutoParts — це самописний **PHP** проект, побудований за архітектурою **Model > View > Controller**. Проєкт реалізує бізнес-логіку магазину на рівні REST-ендпоінтів і SQL-запитів, залишаючи клієнтським застосункам (frontend, мобільні додатки, адмін-панель) лише відображення даних.
 
-```bash
-git clone <URL вашого репозиторію>
-cd AutoParts
+Система орієнтована на реальні сценарії роботи магазину: складна структура каталогу, підбір деталей за параметрами автомобіля, гнучкі методи доставки й оплати, робота з кошиком, замовленнями, знижками та сервісною підтримкою.
 
-# 1) API: змінні середовища
-cd api
-cp .env .env.local    # або створіть .env і заповніть значення
+### Призначення та мета розробки
 
-# 2) Встановлення залежностей
-npm ci   # або npm i
+Мета розробки — створити **масштабований, розширюваний і технологічно сучасний** додаток для інтернет-магазину автозапчастин, який може бути використаний як:
 
-# 3) Запуск (production-mode локально)
-NODE_ENV=production npm start
-# => http://localhost:3000
-```
+- навчальний приклад продакшн‑орієнтованої архітектури на Node.js + PostgreSQL;
+- основа для реального комерційного проєкту з подальшим доопрацюванням;
+- тестовий майданчик для експериментів із бізнес‑логікою, оптимізацією SQL‑запитів, кешуванням тощо.
 
----
+### Основні функціональні можливості
 
-## Використання
+1. **Каталог товарів**
+    - Ієрархія категорій (root/child).
+    - Пошук і фільтрація за назвою, брендом, категорією, ціною, наявністю.
+    - Підтримка “акційних” пропозицій (top deals, popular).
 
-### Авторизація
-Токен сесії (UUID) передається в заголовку:
-- `Authorization: Bearer <token>` або
-- `X-Auth-Token: <token>`
+2. **Підбір за автомобілем**
+    - Марка → модель → покоління → модифікація.
+    - Прив’язка товарів до конкретних модифікацій авто.
+    - Можливість розширення під інші довідники (наприклад, тип двигуна, паливо, рік випуску).
 
-### Базовий флоу
-```bash
-# Реєстрація
-curl -X POST http://localhost:3000/api/auth/register   -H "Content-Type: application/json"   -d '{"name":"User","email":"user@example.com","password":"secret"}'
+3. **Кошик та замовлення**
+    - Створення та оновлення кошика.
+    - Додавання/видалення товарів, зміна кількості.
+    - Розрахунок підсумкової суми замовлення.
+    - Створення замовлення з прив’язкою до користувача, адреси, способів доставки й оплати.
 
-# Логін → отримати токен
-TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login   -H "Content-Type: application/json"   -d '{"email":"user@example.com","password":"secret"}' | jq -r .token)
+4. **Улюблені (wishlist)**
+    - Додавання товарів до списку бажань.
+    - Перегляд і видалення позицій зі списку.
 
-# Перегляд каталогу
-curl "http://localhost:3000/api/products?page=1&perPage=12&sort=popular"
+5. **Адреси та довідники**
+    - Збереження адрес доставки користувача.
+    - Довідники методів доставки та оплати, з можливістю розширення.
 
-# Додати у вибране
-curl -X POST http://localhost:3000/api/wishlist/items   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json"   -d '{"product_id":123}'
+6. **Система знижок і купонів**
+    - Купони з мінімальною сумою замовлення, датами дії, типом знижки (фіксована/відсоткова).
+    - Перевірка купона на стороні API.
 
-# Створити замовлення
-curl -X POST http://localhost:3000/api/orders   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json"   -d '{"cart_id":1,"delivery_method_id":1,"payment_method_id":1,"address":"вул. Приклад, 1"}'
-```
+7. **Тікет‑саппорт**
+    - Базова система заявок підтримки.
+    - Створення тікетів користувачем, зміна статусу, коментарі (залежно від реалізації).
 
-> Health‑check: `GET /` → `{ "success": true, "message": "AutoParts API is running" }`.
+### Архітектура та структура проєкту
 
----
+Бекенд реалізовано на базі **Node.js (ESM) + Express** з підключенням до бази даних **PostgreSQL** через модуль `pg`. Логіка роботи організована за схемою:
 
-## Структура репозиторію
+`view → controllers → models → node.js → db`
 
-```
-AutoParts/
-├─ api/                # бекенд (Node.js + Express + PostgreSQL)
-│  ├─ server.js
-│  ├─ db/
-│  ├─ middlewares/
-│  ├─ models/
-│  └─ routes/
-└─ docs/
-   └─ img.png          # прев’ю/скріншоти
-```
+## Структура проєкту
 
-**api/** (урізане дерево):
-```
-./
-  package-lock.json
-  package.json
-  server.js
-  db/
-    index.js
-  middlewares/
-    auth.js
-  models/
-    addressModel.js
-    adminModel.js
-    brandModel.js
-    carsModel.js
-    cartModel.js
-    categoryModel.js
-    couponsModel.js
-    methodModel.js
-    orderModel.js
-    productModel.js
-    supportModel.js
-    userModel.js
-    wishlistModel.js
-  routes/
-    addresses.js
-    admin.js
-    auth.js
-    brands.js
-    cars.js
-    carts.js
-    categories.js
-    methods.js
-    orders.js
-    products.js
-    support.js
-    users.js
-    wishlist.js
-```
+- `api/` — бекенд-API на **Node.js + Express** з доступом до PostgreSQL.
+    - `db/` — підключення до БД, пул з’єднань і хелпери `dbQuery`.
+    - `middlewares/` — middleware для авторизації, CORS, логування, обробки помилок.
+    - `models/` — робота з таблицями БД (users, products, orders, carts, addresses, discounts тощо).
+    - `routes/` — REST-маршрути (`/api/auth`, `/api/products`, `/api/orders`, `/api/users` і т.д.).
+    - `.env` — змінні середовища (порт, параметри БД, секрети).
+    - `server.js` — точка входу API, ініціалізація Express та маршрутів.
 
----
+- `App/` — PHP-шар (MVC), який рендерить HTML і звертається до Node-API.
+    - `Controllers/` — контролери сторінок (головна, каталог, кошик, профіль, авторизація, замовлення).
+    - `Core/` — ядро: базовий `Controller`, `Router`, `Request/Response`, сесія, CSRF, API-клієнт.
+    - `Lang/` — файли локалізації інтерфейсу (uk/en та інші мови).
+    - `Models/` — PHP-моделі/адаптери над API та доменними сутностями.
+    - `Repositories/` — репозиторії даних (обгортки над API/БД для контролерів).
+    - `Serveces/` — сервісний шар (логіка купонів, кошика, підбору запчастин, нотифікацій тощо).
+    - `helpers.php` — загальні хелпери (URL, ціни, флеш-повідомлення, локалізація).
 
-## Технології
+- `config/` — конфігурація PHP-додатку.
+    - `cacert.pem` — кореневі сертифікати для cURL (Google OAuth, зовнішні HTTPS-API).
+    - `google_oauth.php` — налаштування Google OAuth 2.0 (client_id, secret, redirect_uri, scopes).
+    - `routes.php` — карта маршрутів PHP-додатку (URL → контролер/метод).
+
+- `public/` — публічна директорія (document root).
+    - `views/` — PHP-шаблони сторінок (головна, каталог, товар, кошик, checkout, профіль, логін тощо).
+    - `.htaccess` — правила `mod_rewrite` (ЧПУ-URL, роутинг на `index.php`, базове налаштування доступу).
+    - `index.php` — front controller: підключає автозавантаження, конфіг, роутер і віддає відповідь клієнту.
+
+### Архітектура проєкту дозволяє:
+- легко додавати нові маршрути та сутності;
+- підтримувати розділення відповідальностей;
+- масштабувати застосунок додаючи в нього нові можливості бізнес-логіки, та функціональностей.
+
+### Безпека та надійність
+
+- Зберігання паролів у вигляді хешів (bcrypt).
+- Сесійні токени (UUID) зберігаються в таблиці `user_sessions` з часом життя.
+- Можливість примусового завершення сесій користувача (через адмін‑панель).
+- Валідація даних на рівні контролерів/моделей.
+
+### Перспективи розвитку
+
+- Інтеграція з платіжними сервісами та службами доставки.
+- Впровадження кешування (Redis) для важких запитів каталогу.
+- Розширення моделі знижок (персональні пропозиції, промокампанії).
+- Підготовка до **мікросервісної архітектури** (виокремлення модулів каталогу, замовлень, користувачів тощо).
+
+### Технології
 
 - **Runtime:** Node.js (ESM), Express
 - **Database:** PostgreSQL (`pg` connection pool)
 - **Security:** bcrypt (хешування паролів), сесійні токени (UUID)
 - **Infra:** dotenv, CORS
-- **Архітектура:** `routes → models → db` (SQL‑запити зосереджено у моделях)
+- **Архітектура:** `MVC` (SQL‑запити зосереджено у модулях API )
 - **Залежності:** bcrypt, cors, dotenv, express, pg, uuid
 
----
+## Зовнішній вигляд головної сторінки сайту
+![Preview](Readme_assets/main_page.gif)
 
 ## Налаштування середовища
 
@@ -154,72 +141,31 @@ PGDATABASE=autoparts-db
 PGPORT=5432
 ```
 
-> Міграцій у репозиторії немає — створіть схему БД самостійно за прикладами запитів у `api/models/*`.
+## Встановлення та запуск
 
-### npm‑скрипти
-- `start` — `node server.js`
+> Вимоги: Node.js **18+**, PostgreSQL **13+**
+> XAMPP **8.2.12+**, Apache **2.4+**, PHP **8.0+**.
 
----
-
-## Деплой
-
-### PM2
 ```bash
-npm i -g pm2
+# Клонуйте або завантажте репозиторій
+git clone https://github.com/LC-system32/AutoParts
+
+# 1) Перейдіть у каталог проекту
+cd AutoParts
+
+# 2) Створіть базу даних PostgreSQL,
+createdb -U postgres autoparts-db
+
+# 3) Імпортуйте дамп
+psql -U postgres -d autoparts-db -f "autoparts-db-full.sql"
+
+# 4) Перейдіть у папку REST-API
 cd api
-pm2 start server.js --name autoparts-api --update-env --time
-pm2 save && pm2 startup
+
+# 2) Встановіть залежності
+npm install   # або npm i
+
+# 3) Запустіть REST-API
+npm start
+# http://localhost:3000 
 ```
-
-### Docker (приклад)
-```yaml
-version: "3.8"
-services:
-  db:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: autoparts-db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports: ["5432:5432"]
-    volumes: [db_data:/var/lib/postgresql/data]
-
-  api:
-    image: node:20-alpine
-    working_dir: /app
-    volumes: ["./api:/app"]
-    environment:
-      NODE_ENV: production
-      PORT: "3000"
-      PGHOST: db
-      PGUSER: user
-      PGPASSWORD: password
-      PGDATABASE: autoparts-db
-      PGPORT: "5432"
-    command: ["node","server.js"]
-    ports: ["3000:3000"]
-    depends_on: [db]
-volumes:
-  db_data:
-```
-
-> Рекомендовано розміщувати за reverse‑proxy (Nginx) з TLS та health‑check.
-
----
-
-## Внесок у проєкт
-
-Вітаються pull‑request’и:
-1. Форк → гілка `feature/<short-name>`.
-2. Дотримуйтеся контрактів API `{ success, data|error }` та стилю коду.
-3. Додайте базові тести (за наявності).
-4. Оформіть короткий опис у PR.
-
-> Якщо внесок закритий — замініть цей блок повідомленням про заборону.
-
----
-
-## Ліцензія
-
-Ліцензію не вказано. Додайте файл `LICENSE` або визначте умови використання.
