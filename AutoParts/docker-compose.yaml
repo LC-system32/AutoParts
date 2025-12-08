@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+    db:
+        image: postgres:17
+        container_name: autoparts-db
+        environment:
+            POSTGRES_DB: autoparts-db
+            POSTGRES_USER: user
+            POSTGRES_PASSWORD: user
+        ports:
+            - "5433:5432"       
+        volumes:
+            - db_data:/var/lib/postgresql/data
+    
+    api:
+        build:
+            context: ./api
+            dockerfile: Dockerfile
+        container_name: autoparts-api
+        environment:
+            NODE_ENV: production
+            PORT: 3000
+            PGHOST: db
+            PGUSER: user          
+            PGPASSWORD: user      
+            PGDATABASE: autoparts-db
+            PGPORT: 5432
+        depends_on:
+            - db
+        ports:
+            - "3000:3000"
+    
+    web:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: autoparts-web
+        depends_on:
+            - api
+        environment:
+            API_BASE_URL: http://api:3000
+        ports:
+            - "80:80"
+
+volumes:
+    db_data:
